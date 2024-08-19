@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Face Recognition</title>
+    <style>
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #usernameDisplay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            font-size: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay></video>
+    <div id="usernameDisplay"></div>
+    <script>
+        const video = document.getElementById('video');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+
+            const ws = new WebSocket("ws://192.168.0.172:8080/ws/detection");
+
+            ws.onopen = () => {
+                console.log("WebSocket connection established");
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket connection closed");
+                stopMedia();
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+
+            ws.addEventListener('message', message => {
+                const result = JSON.parse(message.data);
+                if (result['match']) {
+                    usernameDisplay.textContent = `User: ${result['user_name']}`;
+                } else {
+                    usernameDisplay.textContent = "No match found";
+                }
+                // Wait a bit to ensure frame is processed before stopping
+                setTimeout(() => {
+                    ws.close();
+                    stopMedia();
+                }, 1000); // Wait 1 second before stopping the camera
+            });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            // Ensure canvas size matches the video element
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            });
+
+            function captureFrame() {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    if (blob) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            ws.send(reader.result);
+                        };
+                        reader.readAsArrayBuffer(blob);
+                    }
+                }, 'image/jpeg');
+            }
+
+            const intervalId = setInterval(captureFrame, 100);
+
+            function stopMedia() {
+                clearInterval(intervalId);
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null; 
+            }
+
+            // Stop everything after 3 seconds regardless of WebSocket state
+            setTimeout(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.close();
+                }
+                stopMedia();
+            }, 3000); // Stop after 3 seconds
+        }).catch(err => console.error("Camera access error:", err));
+    </script>
+</body>
+</html>

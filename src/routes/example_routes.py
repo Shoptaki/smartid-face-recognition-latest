@@ -1,54 +1,53 @@
-from fastapi import APIRouter, FastAPI, HTTPException, Form
-import cv2
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, APIRouter
 import logging
+import numpy as np
+import cv2
 from core.detection.video_capture import Biometric
 from data.database import Database
-import time
 
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
-
+app = FastAPI()
 router = APIRouter()
 database = Database()
 biometric = Biometric(database.db)
 
-@router.get("/")
-def read_example():
-    return "You've landed on FastAPI"
+clients = {}
 
-# For capturing and saving
-@router.post("/capture")
-def capture_and_save_image(user_name: str = Form(...)):
-    logging.info("Starting /capture endpoint")
-    
-    cap = cv2.VideoCapture(0)
-    time.sleep(1)
-    if not cap.isOpened():
-        logging.error("Unable to access the webcam")
-        raise HTTPException(status_code=500, detail="Unable to access the webcam.")
-
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
-        raise HTTPException(status_code=500, detail="Failed to capture image.")
-
-    if frame is None or frame.size == 0:
-        raise HTTPException(status_code=500, detail="Captured image is empty or invalid.")
+@router.websocket("/ws/detection")
+async def websocket_detection(websocket: WebSocket):
+    await websocket.accept()
+    client_id = id(websocket)
+    clients[client_id] = websocket
+    encodings, user_names = biometric.fetch_encodings_from_db()
 
     try:
-        document = database.save_image_to_minio_and_db(frame, user_name)
-    except ValueError as e:
-        logging.error(f"Error in save_image_to_minio_and_db: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        while True:
+            data = await websocket.receive_bytes()
+            nparr = np.frombuffer(data, dtype="uint8")
+            frame = cv2.imdecode(nparr,cv2.IMREAD_COLOR)
+            # frame = cv2.cvtColor(nparr, cv2.COLOR_BGR2RGB)
+            logging.info(frame)
+            if frame is None or frame.size == 0:
+                logging.error(f"Received empty frame from client {client_id}")
+                continue
 
-    logging.info("Image captured and saved successfully")
-    return {"message": "Image captured and saved successfully.", "document": document}
+            logging.info(f"Received frame from client {client_id} with shape {frame.shape}")
+            result = biometric.detect_face_in_video(frame, encodings, user_names)
+            
+            if client_id in clients:
+                if websocket.client_state == websocket.client_state.CONNECTED:
+                    logging.info(result)
+                    await websocket.send_json(result)
+                if result.get("match") or result.get("error") is not None:
+                    break
+            else:
+                break
 
-@router.get("/detection")
-def face_recognition_endpoint():
-    encodings, user_names = biometric.fetch_encodings_from_db()
-    return biometric.detect_face_in_video(encodings, user_names)
-
-@router.get("/example/")
-def read_example():
-    return {"message": "This is an example route"}
+    except WebSocketDisconnect:
+        logging.info(f"Client {client_id} disconnected")
+    except Exception as e:
+        logging.error(f"Error during WebSocket communication with client {client_id}: {e}")
+    finally:
+        if client_id in clients:
+            clients.pop(client_id, None)
+        if websocket.client_state == websocket.client_state.CONNECTED:
+            await websocket.close()

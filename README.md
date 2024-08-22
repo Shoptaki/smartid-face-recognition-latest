@@ -31,7 +31,7 @@ shoptaki-smartid
 ```
 
 | File      | Description                |
-| :--------   :------------------------- |
+| :-------- | :------------------------- |
 | `video_capture.py` | file with the facial recognition logic |
 | `liveliness_detection.py` | liveliness detection |
 | `guided_liveliness.py` | guided liveliness detection|

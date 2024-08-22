@@ -32,7 +32,7 @@
         navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
             video.srcObject = stream;
 
-            const ws = new WebSocket("ws://192.168.0.172:8080/ws/detection");
+            const ws = new WebSocket("ws://localhost:8080/ws/detection");
 
             ws.onopen = () => {
                 console.log("WebSocket connection established");
@@ -40,7 +40,7 @@
 
             ws.onclose = () => {
                 console.log("WebSocket connection closed");
-                stopMedia();
+                // stopMedia();
             };
 
             ws.onerror = (error) => {
@@ -57,7 +57,7 @@
                 // Wait a bit to ensure frame is processed before stopping
                 setTimeout(() => {
                     ws.close();
-                    stopMedia();
+                    // stopMedia();
                 }, 1000); // Wait 1 second before stopping the camera
             });
 
@@ -101,7 +101,7 @@
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.close();
                 }
-                stopMedia();
+                // stopMedia();
             }, 3000); // Stop after 3 seconds
         }).catch(err => console.error("Camera access error:", err));
     </script>

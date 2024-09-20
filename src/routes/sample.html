@@ -50,7 +50,7 @@
             ws.addEventListener('message', message => {
                 const result = JSON.parse(message.data);
                 if (result['match']) {
-                    usernameDisplay.textContent = `User: ${result['user_name']}`;
+                    usernameDisplay.textContent = `User: ${result['user_name']} liveliness: ${result['liveness']}`;
                 } else {
                     usernameDisplay.textContent = "No match found";
                 }

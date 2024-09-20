@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.cdnfonts.com/css/mona-sans');
+
+body {
+  font-family: 'Mona Sans', sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+}

@@ -43,6 +43,7 @@ shoptaki-smartid
 - Install and run Minio: follow the instructions [here](https://min.io/docs/minio/macos/index.html)
 - Fire up the docker engine and follow the instructions [here](https://hub.docker.com/_/arangodb) for arangodb.
 - once pulled, run the image and update the minIO and arangodb credentials in database.py. We are using pyarango as database driver. checkout documentation for that [here](https://docs.python-arango.com/en/main/)
+- before running the backend, you need to run the arangodb and minIO else you'll get an error and the server won't start.
 
 Clone the project
 
@@ -75,8 +76,6 @@ Start the server
 change the arangodb and minio config in the `database.py`
 
 You can see the API running at https://localhost:8000
-
-./minio server ~/minio/data
 
 Few key points
 

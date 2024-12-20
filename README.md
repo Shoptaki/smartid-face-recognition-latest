@@ -40,6 +40,8 @@ shoptaki-smartid
 | `main.py` | fastAPI main server file|
 
 ## Run Locally
+Install and run Minio: follow the instructions [here](https://min.io/docs/minio/macos/index.html)
+Fire up the docker engine and follow the instructions [here](https://hub.docker.com/_/arangodb) for arangodb, once pulled, run the image and update the minIO and arangodb credentials in database.py. We are using pyarango as database driver. checkout documentation for that [here](https://docs.python-arango.com/en/main/)
 
 Clone the project
 

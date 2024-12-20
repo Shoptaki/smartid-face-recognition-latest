@@ -32,7 +32,6 @@ shoptaki-smartid
 
 | File      | Description                |
 | :-------- | :------------------------- |
-| :--------   :------------------------- |
 | `video_capture.py` | file with the facial recognition logic |
 | `liveliness_detection.py` | liveliness detection |
 | `guided_liveliness.py` | guided liveliness detection|
@@ -74,19 +73,16 @@ change the arangodb and minio config in the `database.py`
 
 You can see the API running at https://localhost:8000
 
-<<<<<<< HEAD
-
 ./minio server ~/minio/data
 
 Few key points
 
     1. The code is not yet dockerized. will be done soon enough
     2. requirements: running arangodb and minio.
-=======
+
 Few key points
 
     1. The code is not yet dockerized. will be done soon enough
     2. requirements : running arangodb and minio.
 
->>>>>>> 903b4e9 (frontend added and optimized for mobile)
 
